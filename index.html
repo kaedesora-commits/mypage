@@ -244,15 +244,15 @@
         }
 
         if (isOvernight) {
-            list.push({ name: "山岳テント (または小屋泊装備)", location: cLocMain, genre: "テント関連", checked: false },
-            { name: "シュラフ (寝袋)・マット", location: cLocMain, genre: "テント関連", checked: false },
-            { name: "バーナー・クッカー・ガス", location: cLocMain, genre: "食料", checked: false },
-            { name: "宿泊用食料・予備食", location: cLocMain, genre: "食料", checked: false });
+            list.push({ name: "山岳テント (または小屋泊装備)", location: cLocMain, genre: "テント関連", checked: false });
+            list.push({ name: "シュラフ (寝袋)・マット", location: cLocMain, genre: "テント関連", checked: false });
+            list.push({ name: "バーナー・クッカー・ガス", location: cLocMain, genre: "食料", checked: false });
+            list.push({ name: "宿泊用食料・予備食", location: cLocMain, genre: "食料", checked: false });
         }
 
         if (isWinter) {
-            list.push({ name: "アイゼン / チェーンスパイク", location: cLocMain, genre: "安全", checked: false },
-            { name: "冬用グローブ・バラクラバ", location: cLocTop, genre: "服装", checked: false });
+            list.push({ name: "アイゼン / チェーンスパイク", location: cLocMain, genre: "安全", checked: false });
+            list.push({ name: "冬用グローブ・バラクラバ", location: cLocTop, genre: "服装", checked: false });
         }
 
         return list;
@@ -515,28 +515,57 @@
         const stays = document.getElementById('condStays').value;
         const transport = document.getElementById('condTransport').value;
 
-        // CSVヘッダーとコンテンツの構築 (BOM付きUTF-8)
         let csvLines = [
-            `"■ 山行条件",,,`,
+            `"■ 山行計画 & 条件設定",,,`,
             `"山名・山域","${mName}"`,
             `"日程","${startDate} ～ ${endDate}"`,
             `"条件","${season} / ${altitude} / ${stays} / ${transport}"`,
-            ``,
-            `"チェック","アイテム名","収納場所","ジャンル"`
+            ``
         ];
 
+        // ジャンル（大項目）ごとにグループ化して出力
+        let allGenres = [...genreCategories];
         items.forEach(item => {
-            const statusStr = item.checked ? "済" : "未";
-            const nameStr = `"${(item.name || '').replace(/"/g, '""')}"`;
-            const locStr = `"${(item.location || '').replace(/"/g, '""')}"`;
-            const genreStr = `"${(item.genre || '').replace(/"/g, '""')}"`;
-            csvLines.push(`"${statusStr}",${nameStr},${locStr},${genreStr}`);
+            if (item.genre && !allGenres.includes(item.genre)) {
+                allGenres.push(item.genre);
+            }
         });
+
+        allGenres.forEach(genre => {
+            const genreItems = items.filter(item => (item.genre || '未指定') === genre);
+            if (genreItems.length > 0) {
+                // 大項目（ジャンル）の行
+                csvLines.push(`"【大項目: ${genre}】",,,`);
+                // カラムヘッダー（中分類として収納場所を配置）
+                csvLines.push(`"チェック","アイテム名","収納場所 (中分類)"`);
+
+                genreItems.forEach(item => {
+                    const statusStr = item.checked ? "済" : "未";
+                    const nameStr = `"${(item.name || '').replace(/"/g, '""')}"`;
+                    const locStr = `"${(item.location || '').replace(/"/g, '""')}"`;
+                    csvLines.push(`"${statusStr}",${nameStr},${locStr}`);
+                });
+                csvLines.push(``); // ジャンルごとの区切り空行
+            }
+        });
+
+        // どのジャンルにも属さないアイテムがある場合のフォールバック
+        const otherGenreItems = items.filter(item => !allGenres.includes(item.genre));
+        if (otherGenreItems.length > 0) {
+            csvLines.push(`"【大項目: その他・未分類】",,,`);
+            csvLines.push(`"チェック","アイテム名","収納場所 (中分類)"`);
+            otherGenreItems.forEach(item => {
+                const statusStr = item.checked ? "済" : "未";
+                const nameStr = `"${(item.name || '').replace(/"/g, '""')}"`;
+                const locStr = `"${(item.location || '').replace(/"/g, '""')}"`;
+                csvLines.push(`"${statusStr}",${nameStr},${locStr}`);
+            });
+            csvLines.push(``);
+        }
 
         const csvContent = "\uFEFF" + csvLines.join("\r\n");
         const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
         
-        // ファイル名の生成
         const sanitizedMountain = mName.replace(/[\\/:*?"<>|]/g, '_');
         const dateStr = startDate ? `_${startDate}` : '';
         const fileName = `持ち物リスト_${sanitizedMountain}${dateStr}.csv`;
@@ -556,13 +585,13 @@
                     if (err.name !== 'AbortError') {
                         console.error('Share failed:', err);
                     } else {
-                        return; // キャンセル時は何もしない
+                        return;
                     }
                 }
             }
         }
 
-        // Share API非対応環境へのフォールバック
+        // フォールバック
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
