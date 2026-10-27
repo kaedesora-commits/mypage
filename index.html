@@ -59,16 +59,8 @@
         .status-box { background: #e8f4fd; padding: 15px; border-radius: 8px; text-align: center; margin-top: 20px; border: 1px solid #d0e7fb; }
         .status-title { font-size: 14px; color: #475569; }
         .status-count { font-size: 26px; font-weight: bold; color: #2980b9; margin-top: 4px; }
-        .btn-pdf { background: #8e44ad; color: white; border: none; padding: 8px 16px; border-radius: 6px; font-weight: bold; cursor: pointer; margin-top: 10px; font-size: 13px; }
-
-        @media print {
-            body { background: #fff; color: #000; padding: 0; }
-            .container { box-shadow: none; padding: 0; max-width: 100%; }
-            .btn-load-template, .view-switch-container, .input-group, .btn-delete, .btn-pdf { display: none !important; }
-            .conditions-box { border: 1px solid #bbb; background: #fafafa; }
-            .category-section { page-break-inside: avoid; border: 1px solid #ccc; margin-bottom: 15px; }
-            .status-box { background: #f0f0f0; border: 1px solid #ccc; }
-        }
+        .action-buttons { display: flex; gap: 8px; justify-content: center; margin-top: 10px; }
+        .btn-csv { background: #27ae60; color: white; border: none; padding: 12px 20px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 14px; width: 100%; max-width: 300px; }
     </style>
 </head>
 <body>
@@ -174,7 +166,9 @@
     <div class="status-box">
         <div class="status-title">パッキング進行状況</div>
         <div class="status-count" id="checkStatusDisplay">0 / 0 完了</div>
-        <button class="btn-pdf" onclick="exportToPDF()">📄 リストをPDF出力・印刷</button>
+        <div class="action-buttons">
+            <button class="btn-csv" onclick="exportToCSV()">📝 CSV保存（メモアプリ等）</button>
+        </div>
     </div>
 </div>
 
@@ -250,15 +244,15 @@
         }
 
         if (isOvernight) {
-            list.push({ name: "山岳テント (または小屋泊装備)", location: cLocMain, genre: "テント関連", checked: false });
-            list.push({ name: "シュラフ (寝袋)・マット", location: cLocMain, genre: "テント関連", checked: false });
-            list.push({ name: "バーナー・クッカー・ガス", location: cLocMain, genre: "食料", checked: false });
-            list.push({ name: "宿泊用食料・予備食", location: cLocMain, genre: "食料", checked: false });
+            list.push({ name: "山岳テント (または小屋泊装備)", location: cLocMain, genre: "テント関連", checked: false },
+            { name: "シュラフ (寝袋)・マット", location: cLocMain, genre: "テント関連", checked: false },
+            { name: "バーナー・クッカー・ガス", location: cLocMain, genre: "食料", checked: false },
+            { name: "宿泊用食料・予備食", location: cLocMain, genre: "食料", checked: false });
         }
 
         if (isWinter) {
-            list.push({ name: "アイゼン / チェーンスパイク", location: cLocMain, genre: "安全", checked: false });
-            list.push({ name: "冬用グローブ・バラクラバ", location: cLocTop, genre: "服装", checked: false });
+            list.push({ name: "アイゼン / チェーンスパイク", location: cLocMain, genre: "安全", checked: false },
+            { name: "冬用グローブ・バラクラバ", location: cLocTop, genre: "服装", checked: false });
         }
 
         return list;
@@ -475,8 +469,8 @@
 
         if (totalCount > 0 && checkedCount === totalCount && previousCheckedCount !== totalCount) {
             setTimeout(() => {
-                if (confirm('🎉 パッキングがすべて完了しました！\nこのチェックリストをPDF保存（または印刷）しますか？')) {
-                    exportToPDF();
+                if (confirm('🎉 パッキングがすべて完了しました！\nこのチェックリストをCSV保存しますか？')) {
+                    exportToCSV();
                 }
             }, 200);
         }
@@ -512,8 +506,71 @@
         render();
     }
 
-    function exportToPDF() {
-        window.print();
+    async function exportToCSV() {
+        const mName = document.getElementById('mountainName').value || '山行計画';
+        const startDate = document.getElementById('tripStartDate').value || '';
+        const endDate = document.getElementById('tripEndDate').value || '';
+        const season = document.getElementById('condSeason').value;
+        const altitude = document.getElementById('condAltitude').value;
+        const stays = document.getElementById('condStays').value;
+        const transport = document.getElementById('condTransport').value;
+
+        // CSVヘッダーとコンテンツの構築 (BOM付きUTF-8)
+        let csvLines = [
+            `"■ 山行条件",,,`,
+            `"山名・山域","${mName}"`,
+            `"日程","${startDate} ～ ${endDate}"`,
+            `"条件","${season} / ${altitude} / ${stays} / ${transport}"`,
+            ``,
+            `"チェック","アイテム名","収納場所","ジャンル"`
+        ];
+
+        items.forEach(item => {
+            const statusStr = item.checked ? "済" : "未";
+            const nameStr = `"${(item.name || '').replace(/"/g, '""')}"`;
+            const locStr = `"${(item.location || '').replace(/"/g, '""')}"`;
+            const genreStr = `"${(item.genre || '').replace(/"/g, '""')}"`;
+            csvLines.push(`"${statusStr}",${nameStr},${locStr},${genreStr}`);
+        });
+
+        const csvContent = "\uFEFF" + csvLines.join("\r\n");
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        
+        // ファイル名の生成
+        const sanitizedMountain = mName.replace(/[\\/:*?"<>|]/g, '_');
+        const dateStr = startDate ? `_${startDate}` : '';
+        const fileName = `持ち物リスト_${sanitizedMountain}${dateStr}.csv`;
+
+        // Web Share API (iPhone Safari 用共有メニュー)
+        if (navigator.share && navigator.canShare) {
+            const file = new File([blob], fileName, { type: 'text/csv' });
+            if (navigator.canShare({ files: [file] })) {
+                try {
+                    await navigator.share({
+                        files: [file],
+                        title: '登山持ち物チェックリスト',
+                        text: `${mName} のパッキングチェックリストCSV`
+                    });
+                    return;
+                } catch (err) {
+                    if (err.name !== 'AbortError') {
+                        console.error('Share failed:', err);
+                    } else {
+                        return; // キャンセル時は何もしない
+                    }
+                }
+            }
+        }
+
+        // Share API非対応環境へのフォールバック
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = fileName;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
     }
 
     function escapeHTML(str) {
