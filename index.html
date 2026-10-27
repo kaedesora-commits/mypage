@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>登山持ち物・パッキングチェックリスト</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; background: #f4f6f8; margin: 0; padding: 16px; color: #333; }
+        .container { max-width: 650px; margin: 0 auto; background: #fff; padding: 20px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+        h2 { margin-top: 0; color: #2c3e50; font-size: 20px; border-bottom: 2px solid #3498db; padding-bottom: 8px; }
+        
+        /* 条件設定エリア */
+        .conditions-box { background: #eef2f7; padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #d1d9e0; }
+        .conditions-title { font-weight: bold; font-size: 14px; color: #34495e; margin-bottom: 10px; }
+        
+        .condition-grid-top { display: grid; grid-template-columns: 1fr; gap: 10px; margin-bottom: 12px; }
+        .date-range-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+        .condition-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 12px; }
+
+        .condition-field { margin-bottom: 8px; }
+        .condition-field label { display: block; font-size: 12px; color: #666; margin-bottom: 4px; }
+        .condition-field input, .condition-field select { width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 6px; font-size: 14px; background: #fff; box-sizing: border-box; }
+
+        .btn-load-template { background: #3498db; color: white; border: none; padding: 10px 12px; border-radius: 6px; font-size: 13px; font-weight: bold; cursor: pointer; width: 100%; margin-top: 8px; }
+
+        /* モード切り替えタブ */
+        .view-switch-container { display: flex; background: #e2e8f0; border-radius: 8px; padding: 4px; margin-bottom: 20px; }
+        .switch-btn { flex: 1; padding: 10px; border: none; background: transparent; font-size: 14px; font-weight: bold; color: #64748b; cursor: pointer; border-radius: 6px; transition: 0.2s; }
+        .switch-btn.active { background: #fff; color: #2563eb; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+
+        /* 追加フォーム */
+        .input-group { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; background: #f8f9fa; padding: 15px; border-radius: 8px; border: 1px solid #e9ecef; }
+        .input-row { display: flex; gap: 8px; }
+        .input-group input, .input-group select { padding: 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 14px; box-sizing: border-box; }
+        .input-group input[type="text"] { flex: 2; }
+        .input-group select { flex: 1; background: #fff; }
+        .btn-add { background: #2ecc71; color: white; border: none; padding: 10px 16px; border-radius: 6px; font-weight: bold; cursor: pointer; width: 100%; font-size: 15px; }
+
+        /* リスト表示 */
+        .category-section { margin-bottom: 20px; border: 1px solid #e1e8ed; border-radius: 8px; overflow: hidden; background: #fff; }
+        .category-header { display: flex; justify-content: space-between; align-items: center; background: #f1f5f9; padding: 10px 14px; font-weight: bold; color: #334155; font-size: 14px; border-bottom: 1px solid #e1e8ed; }
+        .category-badge { background: #cbd5e1; color: #334155; font-size: 12px; padding: 2px 8px; border-radius: 12px; }
+        .item-list { list-style: none; padding: 0; margin: 0; }
+        .item-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 14px; border-bottom: 1px solid #f1f1f1; }
+        .item-row:last-child { border-bottom: none; }
+        .item-left { display: flex; align-items: center; gap: 10px; flex: 1; }
+        .item-left input[type="checkbox"] { width: 18px; height: 18px; cursor: pointer; }
+        .item-info-text { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; }
+        .item-name { font-size: 15px; }
+        
+        .tag-badge { display: inline-block; font-size: 11px; padding: 2px 8px; border-radius: 4px; font-weight: 500; }
+
+        .checked-item { text-decoration: line-through; color: #94a3b8; }
+        .empty-msg { padding: 12px 14px; font-size: 13px; color: #888; text-align: center; }
+        .btn-delete { background: #e74c3c; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 11px; }
+
+        /* ステータス表示エリア */
+        .status-box { background: #e8f4fd; padding: 15px; border-radius: 8px; text-align: center; margin-top: 20px; border: 1px solid #d0e7fb; }
+        .status-title { font-size: 14px; color: #475569; }
+        .status-count { font-size: 26px; font-weight: bold; color: #2980b9; margin-top: 4px; }
+        .btn-pdf { background: #8e44ad; color: white; border: none; padding: 8px 16px; border-radius: 6px; font-weight: bold; cursor: pointer; margin-top: 10px; font-size: 13px; }
+
+        @media print {
+            body { background: #fff; color: #000; padding: 0; }
+            .container { box-shadow: none; padding: 0; max-width: 100%; }
+            .btn-load-template, .view-switch-container, .input-group, .btn-delete, .btn-pdf { display: none !important; }
+            .conditions-box { border: 1px solid #bbb; background: #fafafa; }
+            .category-section { page-break-inside: avoid; border: 1px solid #ccc; margin-bottom: 15px; }
+            .status-box { background: #f0f0f0; border: 1px solid #ccc; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>登山持ち物チェックリスト</h2>
+    
+    <!-- 条件選択エリア -->
+    <div class="conditions-box">
+        <div class="conditions-title">🏔 山行計画 & 条件設定</div>
+        
+        <div class="condition-grid-top">
+            <div class="condition-field">
+                <label>予定する山名・山域</label>
+                <input type="text" id="mountainName" placeholder="例: 越後駒ヶ岳 (駒の小屋泊)" oninput="saveConditions()">
+            </div>
+            
+            <div class="date-range-grid">
+                <div class="condition-field">
+                    <label>山行開始日 (いつから)</label>
+                    <input type="date" id="tripStartDate" onchange="onStartDateOrStaysChange()">
+                </div>
+                <div class="condition-field">
+                    <label>下山日 (いつまで)</label>
+                    <input type="date" id="tripEndDate" onchange="saveConditions()">
+                </div>
+            </div>
+        </div>
+
+        <div class="condition-grid">
+            <div class="condition-field">
+                <label>① 季節</label>
+                <select id="condSeason" onchange="saveConditions()">
+                    <option value="春">春 (残雪・新緑)</option>
+                    <option value="夏" selected>夏 (無雪期)</option>
+                    <option value="秋">秋 (紅葉・寒暖差)</option>
+                    <option value="冬">冬 (雪山・厳冬期)</option>
+                </select>
+            </div>
+            <div class="condition-field">
+                <label>② 標高</label>
+                <select id="condAltitude" onchange="saveConditions()">
+                    <option value="低山">低山 (&lt;1000m)</option>
+                    <option value="中低山" selected>中低山 (1000-2500m)</option>
+                    <option value="高山">高山 (2500m以上)</option>
+                </select>
+            </div>
+            <div class="condition-field">
+                <label>③ 泊数</label>
+                <select id="condStays" onchange="onStartDateOrStaysChange()">
+                    <option value="日帰り" selected>日帰り</option>
+                    <option value="1泊">1泊2日</option>
+                    <option value="2泊">2泊3日</option>
+                    <option value="3泊">3泊4日</option>
+                    <option value="4泊">4泊5日</option>
+                </select>
+            </div>
+            <div class="condition-field">
+                <label>④ 交通手段</label>
+                <select id="condTransport" onchange="saveConditions()">
+                    <option value="公共交通" selected>公共交通 (電車・バス)</option>
+                    <option value="車">マイカー</option>
+                    <option value="公共＋車">公共＋車 (ハイブリッド)</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- 収納場所 & ジャンル分類の自由設定 -->
+        <div class="condition-field">
+            <label>📦 パッキング収納場所（カンマ区切り）</label>
+            <input type="text" id="customLocationCategories" value="ザックメイン気室,雨蓋・トップポケット,サコッシュ・身につけるもの,サブバッグ・車内用" onchange="updateCategoryOptions()">
+        </div>
+        <div class="condition-field">
+            <label>🏷 ギアジャンル分類（カンマ区切り）</label>
+            <input type="text" id="customGenreCategories" value="ザック,食料,服装,テント関連,小物,安全,その他" onchange="updateCategoryOptions()">
+        </div>
+
+        <button class="btn-load-template" onclick="loadTemplate()">✨ 条件に応じた標準リストを読み込む（上書き）</button>
+    </div>
+
+    <!-- 表示切り替えスイッチ -->
+    <div class="view-switch-container">
+        <button id="btnViewLocation" class="switch-btn active" onclick="switchViewMode('location')">📦 パッキング場所別で見る</button>
+        <button id="btnViewGenre" class="switch-btn" onclick="switchViewMode('genre')">🏷 ギアジャンル別で見る</button>
+    </div>
+
+    <!-- アイテム追加用フォーム -->
+    <div class="input-group">
+        <div class="input-row">
+            <input type="text" id="itemName" placeholder="追加アイテム名 (例: ヘッドライト)">
+        </div>
+        <div class="input-row">
+            <select id="itemLocationSelect" title="収納場所"></select>
+            <select id="itemGenreSelect" title="ジャンル"></select>
+        </div>
+        <button class="btn-add" onclick="addItem()">リストに追加</button>
+    </div>
+
+    <!-- リスト表示領域 -->
+    <div id="categoryContainer"></div>
+
+    <!-- ステータス表示エリア -->
+    <div class="status-box">
+        <div class="status-title">パッキング進行状況</div>
+        <div class="status-count" id="checkStatusDisplay">0 / 0 完了</div>
+        <button class="btn-pdf" onclick="exportToPDF()">📄 リストをPDF出力・印刷</button>
+    </div>
+</div>
+
+<script>
+    let currentViewMode = 'location';
+    let previousCheckedCount = -1;
+
+    let locationCategories = ["ザックメイン気室", "雨蓋・トップポケット", "サコッシュ・身につけるもの", "サブバッグ・車内用"];
+    let genreCategories = ["ザック", "食料", "服装", "テント関連", "小物", "安全", "その他"];
+
+    function getTagStyle(str) {
+        if (!str) return 'background-color: #f1f5f9; color: #475569; border: 1px solid #cbd5e1;';
+        let hash = 0;
+        for (let i = 0; i < str.length; i++) {
+            hash = str.charCodeAt(i) + ((hash << 5) - hash);
+        }
+        const hue = Math.abs(hash) % 360;
+        return `background-color: hsl(${hue}, 70%, 93%); color: hsl(${hue}, 80%, 28%); border: 1px solid hsl(${hue}, 60%, 82%);`;
+    }
+
+    // 泊数と開始日に応じて下山日を自動計算する関数
+    function onStartDateOrStaysChange() {
+        const startDateVal = document.getElementById('tripStartDate').value;
+        const staysVal = document.getElementById('condStays').value;
+
+        if (startDateVal) {
+            let stayDays = 0;
+            if (staysVal === "1泊") stayDays = 1;
+            else if (staysVal === "2泊") stayDays = 2;
+            else if (staysVal === "3泊") stayDays = 3;
+            else if (staysVal === "4泊") stayDays = 4;
+
+            const startDate = new Date(startDateVal);
+            startDate.setDate(startDate.getDate() + stayDays);
+
+            const year = startDate.getFullYear();
+            const month = String(startDate.getMonth() + 1).padStart(2, '0');
+            const day = String(startDate.getDate()).padStart(2, '0');
+
+            document.getElementById('tripEndDate').value = `${year}-${month}-${day}`;
+        }
+        saveConditions();
+    }
+
+    function getTemplateItems(season, altitude, stays, transport) {
+        let isOvernight = (stays !== "日帰り");
+        let isWinter = (season === "冬");
+
+        let cLocMain = locationCategories[0] || "ザックメイン気室";
+        let cLocTop = locationCategories[1] || "雨蓋・トップポケット";
+        let cLocPocket = locationCategories[2] || "サコッシュ・身につけるもの";
+        let cLocSub = locationCategories[3] || "サブバッグ・車内用";
+
+        let list = [
+            { name: "ザック本体", location: cLocMain, genre: "ザック", checked: false },
+            { name: "レインウェア上下", location: cLocMain, genre: "服装", checked: false },
+            { name: "防寒着 (フリース/ダウン)", location: cLocMain, genre: "服装", checked: false },
+            { name: "ツェルト・エマージェンシーシート", location: cLocMain, genre: "安全", checked: false },
+            { name: "飲料水・ハイドレーション", location: cLocMain, genre: "食料", checked: false },
+            { name: "ヘッドライト ＋ 予備電池", location: cLocTop, genre: "小物", checked: false },
+            { name: "ファーストエイドキット", location: cLocTop, genre: "安全", checked: false },
+            { name: "地図・コンパス・GPS", location: cLocPocket, genre: "安全", checked: false },
+            { name: "行動食・非常食", location: cLocPocket, genre: "食料", checked: false },
+            { name: "スマートフォン・モバイルバッテリー", location: cLocPocket, genre: "小物", checked: false },
+        ];
+
+        if (transport === "公共交通" || transport === "公共＋車") {
+            list.push({ name: "交通ICカード・現金（電車・バス用）", location: cLocPocket, genre: "小物", checked: false });
+        }
+        if (transport === "車" || transport === "公共＋車") {
+            list.push({ name: "車内着・サンダル（下山後用）", location: cLocSub, genre: "その他", checked: false });
+            list.push({ name: "駐車協力金・小銭", location: cLocPocket, genre: "小物", checked: false });
+        }
+
+        if (isOvernight) {
+            list.push({ name: "山岳テント (または小屋泊装備)", location: cLocMain, genre: "テント関連", checked: false });
+            list.push({ name: "シュラフ (寝袋)・マット", location: cLocMain, genre: "テント関連", checked: false });
+            list.push({ name: "バーナー・クッカー・ガス", location: cLocMain, genre: "食料", checked: false });
+            list.push({ name: "宿泊用食料・予備食", location: cLocMain, genre: "食料", checked: false });
+        }
+
+        if (isWinter) {
+            list.push({ name: "アイゼン / チェーンスパイク", location: cLocMain, genre: "安全", checked: false });
+            list.push({ name: "冬用グローブ・バラクラバ", location: cLocTop, genre: "服装", checked: false });
+        }
+
+        return list;
+    }
+
+    let items = [];
+    let savedItems = localStorage.getItem('climbing_checklist_v8_items');
+    let savedConds = localStorage.getItem('climbing_checklist_v8_conds');
+
+    if (savedConds) {
+        try {
+            const conds = JSON.parse(savedConds);
+            document.getElementById('mountainName').value = conds.mountainName || "";
+            document.getElementById('tripStartDate').value = conds.tripStartDate || "";
+            document.getElementById('tripEndDate').value = conds.tripEndDate || "";
+            document.getElementById('condSeason').value = conds.season || "夏";
+            document.getElementById('condAltitude').value = conds.altitude || "中低山";
+            document.getElementById('condStays').value = conds.stays || "日帰り";
+            document.getElementById('condTransport').value = conds.transport || "公共交通";
+            if (conds.customLocationCategories) {
+                document.getElementById('customLocationCategories').value = conds.customLocationCategories;
+            }
+            if (conds.customGenreCategories) {
+                document.getElementById('customGenreCategories').value = conds.customGenreCategories;
+            }
+            if (conds.viewMode) {
+                currentViewMode = conds.viewMode;
+            }
+        } catch(e) {}
+    }
+
+    updateCategoryOptions(false);
+
+    if (savedItems) {
+        try {
+            items = JSON.parse(savedItems);
+        } catch(e) { items = getTemplateItems("夏", "中低山", "日帰り", "公共交通"); }
+    } else {
+        items = getTemplateItems("夏", "中低山", "日帰り", "公共交通");
+    }
+
+    function switchViewMode(mode) {
+        currentViewMode = mode;
+        document.getElementById('btnViewLocation').classList.toggle('active', mode === 'location');
+        document.getElementById('btnViewGenre').classList.toggle('active', mode === 'genre');
+        saveConditions();
+        render();
+    }
+
+    function updateCategoryOptions(shouldRender = true) {
+        const rawLoc = document.getElementById('customLocationCategories').value;
+        const parsedLoc = rawLoc.split(',').map(s => s.trim()).filter(s => s.length > 0);
+        locationCategories = parsedLoc.length > 0 ? parsedLoc : ["ザックメイン気室", "雨蓋・トップポケット", "サコッシュ・身につけるもの", "サブバッグ・車内用"];
+
+        const rawGenre = document.getElementById('customGenreCategories').value;
+        const parsedGenre = rawGenre.split(',').map(s => s.trim()).filter(s => s.length > 0);
+        genreCategories = parsedGenre.length > 0 ? parsedGenre : ["ザック", "食料", "服装", "テント関連", "小物", "安全", "その他"];
+
+        const locSelect = document.getElementById('itemLocationSelect');
+        locSelect.innerHTML = '';
+        locationCategories.forEach(cat => {
+            const opt = document.createElement('option');
+            opt.value = cat;
+            opt.textContent = "📦 " + cat;
+            locSelect.appendChild(opt);
+        });
+
+        const genreSelect = document.getElementById('itemGenreSelect');
+        genreSelect.innerHTML = '';
+        genreCategories.forEach(cat => {
+            const opt = document.createElement('option');
+            opt.value = cat;
+            opt.textContent = "🏷 " + cat;
+            genreSelect.appendChild(opt);
+        });
+
+        saveConditions();
+        if (shouldRender) render();
+    }
+
+    function saveConditions() {
+        const conds = {
+            mountainName: document.getElementById('mountainName').value,
+            tripStartDate: document.getElementById('tripStartDate').value,
+            tripEndDate: document.getElementById('tripEndDate').value,
+            season: document.getElementById('condSeason').value,
+            altitude: document.getElementById('condAltitude').value,
+            stays: document.getElementById('condStays').value,
+            transport: document.getElementById('condTransport').value,
+            customLocationCategories: document.getElementById('customLocationCategories').value,
+            customGenreCategories: document.getElementById('customGenreCategories').value,
+            viewMode: currentViewMode
+        };
+        localStorage.setItem('climbing_checklist_v8_conds', JSON.stringify(conds));
+    }
+
+    function loadTemplate() {
+        const season = document.getElementById('condSeason').value;
+        const altitude = document.getElementById('condAltitude').value;
+        const stays = document.getElementById('condStays').value;
+        const transport = document.getElementById('condTransport').value;
+
+        if (confirm(`「${season} / ${altitude} / ${stays} / ${transport}」の条件で標準テンプレートを読み込みますか？（現在のリストは上書きされます）`)) {
+            items = getTemplateItems(season, altitude, stays, transport);
+            render();
+        }
+    }
+
+    function render() {
+        const container = document.getElementById('categoryContainer');
+        container.innerHTML = '';
+        
+        let checkedCount = 0;
+        let totalCount = items.length;
+
+        const isLocationMode = (currentViewMode === 'location');
+        const activeCategories = isLocationMode ? locationCategories : genreCategories;
+        const iconPrefix = isLocationMode ? "📦 " : "🏷 ";
+
+        activeCategories.forEach(cat => {
+            const catItems = items.map((item, index) => ({ ...item, originalIndex: index }))
+                                  .filter(item => isLocationMode ? item.location === cat : item.genre === cat);
+
+            const section = document.createElement('div');
+            section.className = 'category-section';
+
+            section.innerHTML = `
+                <div class="category-header">
+                    <span>${iconPrefix}${escapeHTML(cat)}</span>
+                    <span class="category-badge">${catItems.length} 項目</span>
+                </div>
+            `;
+
+            if (catItems.length > 0) {
+                const ul = document.createElement('ul');
+                ul.className = 'item-list';
+
+                catItems.forEach(item => {
+                    if (item.checked) checkedCount++;
+
+                    const targetVal = isLocationMode ? (item.genre || '未指定') : (item.location || '未指定');
+                    const prefixSymbol = isLocationMode ? "🏷 " : "📦 ";
+                    const tagStyle = getTagStyle(targetVal);
+
+                    const tagHtml = `<span class="tag-badge" style="${tagStyle}">${prefixSymbol}${escapeHTML(targetVal)}</span>`;
+
+                    const li = document.createElement('li');
+                    li.className = 'item-row';
+                    li.innerHTML = `
+                        <div class="item-left">
+                            <input type="checkbox" ${item.checked ? 'checked' : ''} onchange="toggleCheck(${item.originalIndex})">
+                            <div class="item-info-text">
+                                <span class="item-name ${item.checked ? 'checked-item' : ''}">${escapeHTML(item.name)}</span>
+                                ${tagHtml}
+                            </div>
+                        </div>
+                        <button class="btn-delete" onclick="deleteItem(${item.originalIndex})">削除</button>
+                    `;
+                    ul.appendChild(li);
+                });
+                section.appendChild(ul);
+            } else {
+                const emptyMsg = document.createElement('div');
+                emptyMsg.className = 'empty-msg';
+                emptyMsg.textContent = 'この分類のアイテムはありません';
+                section.appendChild(emptyMsg);
+            }
+
+            container.appendChild(section);
+        });
+
+        // 未定義分類のアイテムがあれば表示
+        const otherItems = items.map((item, index) => ({ ...item, originalIndex: index }))
+                                .filter(item => isLocationMode ? !locationCategories.includes(item.location) : !genreCategories.includes(item.genre));
+
+        if (otherItems.length > 0) {
+            const section = document.createElement('div');
+            section.className = 'category-section';
+            section.innerHTML = `
+                <div class="category-header">
+                    <span>${iconPrefix}未分類・その他</span>
+                    <span class="category-badge">${otherItems.length} 項目</span>
+                </div>
+            `;
+            const ul = document.createElement('ul');
+            ul.className = 'item-list';
+            otherItems.forEach(item => {
+                if (item.checked) checkedCount++;
+                const targetVal = isLocationMode ? (item.genre || '未指定') : (item.location || '未指定');
+                const prefixSymbol = isLocationMode ? "🏷 " : "📦 ";
+                const tagStyle = getTagStyle(targetVal);
+                const tagHtml = `<span class="tag-badge" style="${tagStyle}">${prefixSymbol}${escapeHTML(targetVal)}</span>`;
+
+                const li = document.createElement('li');
+                li.className = 'item-row';
+                li.innerHTML = `
+                    <div class="item-left">
+                        <input type="checkbox" ${item.checked ? 'checked' : ''} onchange="toggleCheck(${item.originalIndex})">
+                        <div class="item-info-text">
+                            <span class="item-name ${item.checked ? 'checked-item' : ''}">${escapeHTML(item.name)}</span>
+                            ${tagHtml}
+                        </div>
+                    </div>
+                    <button class="btn-delete" onclick="deleteItem(${item.originalIndex})">削除</button>
+                `;
+                ul.appendChild(li);
+            });
+            section.appendChild(ul);
+            container.appendChild(section);
+        }
+
+        document.getElementById('checkStatusDisplay').textContent = `${checkedCount} / ${totalCount} 完了`;
+        localStorage.setItem('climbing_checklist_v8_items', JSON.stringify(items));
+
+        if (totalCount > 0 && checkedCount === totalCount && previousCheckedCount !== totalCount) {
+            setTimeout(() => {
+                if (confirm('🎉 パッキングがすべて完了しました！\nこのチェックリストをPDF保存（または印刷）しますか？')) {
+                    exportToPDF();
+                }
+            }, 200);
+        }
+        previousCheckedCount = checkedCount;
+    }
+
+    function toggleCheck(index) {
+        items[index].checked = !items[index].checked;
+        render();
+    }
+
+    function addItem() {
+        const nameInput = document.getElementById('itemName');
+        const locationSelect = document.getElementById('itemLocationSelect');
+        const genreSelect = document.getElementById('itemGenreSelect');
+
+        const name = nameInput.value.trim();
+        const location = locationSelect.value;
+        const genre = genreSelect.value;
+
+        if (!name) {
+            alert('アイテム名を入力してください。');
+            return;
+        }
+
+        items.push({ name, location, genre, checked: false });
+        nameInput.value = '';
+        render();
+    }
+
+    function deleteItem(index) {
+        items.splice(index, 1);
+        render();
+    }
+
+    function exportToPDF() {
+        window.print();
+    }
+
+    function escapeHTML(str) {
+        return str.replace(/[&<>'"]/g, 
+            tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag)
+        );
+    }
+
+    render();
+</script>
+
+</body>
+</html>
